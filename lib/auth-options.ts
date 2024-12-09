@@ -1,13 +1,20 @@
 import { NextAuthOptions } from "next-auth";
-import GithubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
+import EmailProvider from "next-auth/providers/email";
 import CredentialProvider from "next-auth/providers/credentials";
-
+import { FirebaseAdapterConfig, FirestoreAdapter } from "@auth/firebase-adapter"
+import { cert } from 'firebase-admin/app';
 export const authOptions: NextAuthOptions = {
   providers: [
-    GithubProvider({
-      clientId: process.env.GITHUB_ID ?? "",
-      clientSecret: process.env.GITHUB_SECRET ?? "",
+    GoogleProvider({
+      clientId: process.env.GOOGLE_ID as string,
+      clientSecret: process.env.GOOGLE_SECRET as string,
     }),
+    EmailProvider({
+      server: process.env.EMAIL_SERVER,
+      from: process.env.EMAIL_FROM,
+    }),
+
     CredentialProvider({
       credentials: {
         email: {
@@ -15,6 +22,7 @@ export const authOptions: NextAuthOptions = {
           type: "email",
           placeholder: "example@gmail.com",
         },
+
       },
       async authorize(credentials, req) {
         const user = { id: "1", name: "John", email: credentials?.email };
@@ -33,4 +41,11 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/", //sigin page
   },
+  adapter: FirestoreAdapter({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY,
+    } as FirebaseAdapterConfig)
+  }),
 };
